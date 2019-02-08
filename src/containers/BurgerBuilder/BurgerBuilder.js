@@ -4,6 +4,9 @@ import Burger from '../../components/Burger/Burger';
 import BuildControls from '../../components/Burger/BuildControls/BuildControls';
 import Modal from '../../components/UI/Modal/Modal';
 import OrderSummary from '../../components/Burger/OrderSummary/OrderSummary';
+import axios from '../../axios-order';
+import Spinner from '../../components/UI/Spinner/Spinner';
+import withErrorHandler from '../../hoc/withErrorHandler'
 
 const INGREDIENTS_PRICES = {
     salad: 0.5,
@@ -15,15 +18,12 @@ const INGREDIENTS_PRICES = {
 class BulgerBuilder extends Component{
 
     state = {
-        ingredients:{
-            salad: 0,
-            bacon: 0,
-            cheese: 0,
-            meat: 0
-        },
+        ingredients: null,
         totalPrice: 0,
         purchaseable: false,
-        purchasing: false
+        purchasing: false,
+        loading: false,
+        error: false
     };
 
     addIngredientHandler = (type) => {
@@ -86,7 +86,37 @@ class BulgerBuilder extends Component{
     }
 
     purchaseContinueHandler = () => {
-        alert("You continue");
+        //alert("You continue");
+        this.setState({loading: true});
+        const order = {
+            ingredients: this.state.ingredients,
+            price: this.state.oldPrice,
+            customer:{
+                name: "Yunior",
+                address:{
+                    street: "Gregorio Luperon",
+                    zipCode: '41351',
+                    country: "Dominicana"
+                },
+                email: 'yuniorlaureano@gmail.com'
+            },
+            deliverMethod: 'faster'
+        };
+
+        axios.post('/orders.json', order).then(response => {
+            console.log(response);
+            this.setState({loading: false, purchasing: false});
+        }).catch(response => {
+            console.log(response);
+            this.setState({loading: false, purchasing: false});
+        });
+    }
+
+    componentDidMount(){
+        axios.get('https://react-my-burger-789d8.firebaseio.com/ingredients.json')
+             .then(response => {
+                this.setState({ingredients: response.data});
+             }).catch(error => {this.setState({error: true});});
     }
 
     render(){
@@ -98,26 +128,46 @@ class BulgerBuilder extends Component{
             disabledInfo[key] = disabledInfo[key] <= 0;
         }
 
+        let orderSummary = null;
+        
+        if(this.state.ingredients){
+            orderSummary = <OrderSummary ingredients={this.state.ingredients} 
+            purchaseCanceled={this.purchaseCancelHandler}
+            purchaseContinue={this.purchaseContinueHandler}
+            price={this.state.totalPrice}
+            />
+        }
+        
+        let burger = <Spinner/>;
+
+        if(this.state.ingredients){
+            burger = (
+                <div>
+                     <Burger ingredients={this.state.ingredients}></Burger>
+                     <BuildControls
+                     ingredientAddet={this.addIngredientHandler}
+                     ingredientRemoved={this.removeIngredientHandler} 
+                     disabled={disabledInfo}
+                     purchaseable={this.state.purchaseable}
+                     ordered={this.purchaseHandler}
+                     price={this.state.totalPrice}/>
+                </div>
+             );
+        }
+        
+        if(this.state.loading){
+            orderSummary = <Spinner />;
+        }
+
         return(
             <Aux>
-                <Modal show={this.state.purchasing} modalClosed={this.purchaseCancelHandler}>
-                    <OrderSummary ingredients={this.state.ingredients} 
-                    purchaseCanceled={this.purchaseCancelHandler}
-                    purchaseContinue={this.purchaseContinueHandler}
-                    price={this.state.totalPrice}
-                    />
+                <Modal show={this.state.purchasing} modalClosed={this  .purchaseCancelHandler}>
+                    {orderSummary}
                 </Modal>
-                <Burger ingredients={this.state.ingredients}></Burger>
-                <BuildControls
-                ingredientAddet={this.addIngredientHandler}
-                ingredientRemoved={this.removeIngredientHandler} 
-                disabled={disabledInfo}
-                purchaseable={this.state.purchaseable}
-                ordered={this.purchaseHandler}
-                price={this.state.totalPrice}/>
+                {burger}
             </Aux>
         );
     };
 }
 
-export default BulgerBuilder;
+export default withErrorHandler(BulgerBuilder, axios);
