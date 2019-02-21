@@ -6,67 +6,19 @@ import Modal from '../../components/UI/Modal/Modal';
 import OrderSummary from '../../components/Burger/OrderSummary/OrderSummary';
 import axios from '../../axios-order';
 import Spinner from '../../components/UI/Spinner/Spinner';
-import withErrorHandler from '../../hoc/withErrorHandler'
-
-const INGREDIENTS_PRICES = {
-    salad: 0.5,
-    cheese: 0.4,
-    meat: 0.7,
-    bacon: 0.7
-};
+import withErrorHandler from '../../hoc/withErrorHandler';
+import {connect} from 'react-redux';
+import * as actionTypes from '../../store/actions';
 
 class BulgerBuilder extends Component{
 
     state = {
-        ingredients: null,
-        totalPrice: 0,
-        purchaseable: false,
         purchasing: false,
         loading: false,
         error: false
     };
 
-    addIngredientHandler = (type) => {
-        const oldCount = this.state.ingredients[type];
-        const updatedCount = oldCount + 1;
-        const updatedIngredients = {
-            ...this.state.ingredients
-        };
-        updatedIngredients[type] = updatedCount;
-        const priceDeduction = INGREDIENTS_PRICES[type];
-        const oldPrice = this.state.totalPrice;
-        const newPrice = oldPrice - priceDeduction;       
-        this.setState({
-            totalPrice: newPrice,
-            ingredients: updatedIngredients
-        });
-        this.updatePurchaseState(updatedIngredients);
-    }
-
-    removeIngredientHandler = (type) =>{
-        const oldCount = this.state.ingredients[type];
-
-        if(oldCount <= 0)
-        {
-            return 0;
-        }
-
-        const updatedCount = oldCount - 1;
-        const updatedIngredients = {
-            ...this.state.ingredients
-        };
-        updatedIngredients[type] = updatedCount;
-        const priceAddtion = INGREDIENTS_PRICES[type];
-        const oldPrice = this.state.totalPrice;
-        const newPrice = oldPrice + priceAddtion;       
-        this.setState({
-            totalPrice: newPrice,
-            ingredients: updatedIngredients
-        });
-        this.updatePurchaseState(updatedIngredients);
-    }
-
-    updatePurchaseState = (ingredients) => {
+    updatePurchase = (ingredients) => {
         
         const sum = Object.keys(ingredients).map(igKey => {
             return ingredients[igKey];
@@ -74,7 +26,7 @@ class BulgerBuilder extends Component{
             return sum + el;
         }, 0);
 
-        this.setState({purchaseable: sum > 0});
+        return sum > 0;
     }
 
     purchaseHandler = () => {
@@ -87,29 +39,19 @@ class BulgerBuilder extends Component{
 
     purchaseContinueHandler = () => {
 
-       
-        const queryParams = [];
-        for(let i in this.state.ingredients){
-            queryParams.push(encodeURIComponent(i) + '=' + encodeURIComponent(this.state.ingredients[i]));
-        }
-        queryParams.push('price=' + this.state.totalPrice);
-        const queryString = queryParams.join('&');
-        this.props.history.push({
-            pathname: '/checkout',
-            search: '?' + queryString
-        });
+        this.props.history.push('/checkout');
     }
 
     componentDidMount(){
-        axios.get('https://react-my-burger-789d8.firebaseio.com/ingredients.json')
-             .then(response => {
-                this.setState({ingredients: response.data});
-             }).catch(error => {this.setState({error: true});});
+        // axios.get('https://react-my-burger-789d8.firebaseio.com/ingredients.json')
+        //      .then(response => {
+        //         this.setState({ingredients: response.data});
+        //      }).catch(error => {this.setState({error: true});});
     }
 
     render(){
         const disabledInfo = {
-            ...this.state.ingredients
+            ...this.props.ings
         };
 
         for(let key in disabledInfo){
@@ -118,27 +60,28 @@ class BulgerBuilder extends Component{
 
         let orderSummary = null;
         
-        if(this.state.ingredients){
-            orderSummary = <OrderSummary ingredients={this.state.ingredients} 
+        if(this.props.ings){
+            orderSummary = <OrderSummary ingredients={this.props.ings} 
             purchaseCanceled={this.purchaseCancelHandler}
             purchaseContinue={this.purchaseContinueHandler}
-            price={this.state.totalPrice}
+            price={this.props.price}
             />
         }
         
         let burger = <Spinner/>;
 
-        if(this.state.ingredients){
+        if(this.props.ings){
+            
             burger = (
                 <div>
-                     <Burger ingredients={this.state.ingredients}></Burger>
+                     <Burger ingredients={this.props.ings}></Burger>
                      <BuildControls
-                     ingredientAddet={this.addIngredientHandler}
-                     ingredientRemoved={this.removeIngredientHandler} 
-                     disabled={disabledInfo}
-                     purchaseable={this.state.purchaseable}
-                     ordered={this.purchaseHandler}
-                     price={this.state.totalPrice}/>
+                        ingredientAddet={this.props.onIngredientAdded}
+                        ingredientRemoved={this.props.onIngredientRemoved} 
+                        disabled={disabledInfo}
+                        purchaseable={this.updatePurchase(this.props.ings)}
+                        ordered={this.purchaseHandler}
+                        price={this.props.price}/>
                 </div>
              );
         }
@@ -158,4 +101,18 @@ class BulgerBuilder extends Component{
     };
 }
 
-export default withErrorHandler(BulgerBuilder, axios);
+const mapStateToProps = state =>{
+    return {
+        ings: state.ingredients,
+        price: state.totalPrice
+    }
+};
+
+const mapDispatchToProps = dispatch =>{
+    return {
+        onIngredientAdded: (ingName) => dispatch({type: actionTypes.ADD_INGREDIENTS, ingredientName:ingName}),
+        onIngredientRemoved: (ingName) => dispatch({type: actionTypes.REMOVE_INGREDIENT, ingredientName:ingName})
+    }
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(withErrorHandler(BulgerBuilder, axios));
