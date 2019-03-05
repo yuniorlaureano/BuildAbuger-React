@@ -4,15 +4,17 @@ import BurgerBuilder from './containers/BurgerBuilder/BurgerBuilder';
 import Checkout from './containers/Checkout/Checkout';
 import {Route, Switch} from 'react-router-dom';
 import Orders from './containers/Orders/Orders';
+import Auth from './containers/Auth/Auth';
 
 class App extends Component {
   render() {
     return (
       <div>
         <Layout>
-          <Switch>
+          <Switch>            
             <Route path="/checkout" exac component={Checkout}/>
             <Route path="/orders" exac component={Orders}/>
+            <Route path="/auth" exac component={Auth}/>
             <Route path="/" component={BurgerBuilder}/>            
           </Switch>
         </Layout>
