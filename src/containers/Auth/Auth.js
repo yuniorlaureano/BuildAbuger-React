@@ -30,8 +30,9 @@ class Auth extends Component {
                 validation:{
                     required: true
                 }
-            },
-        }
+            }           
+        },
+        isSignup: true
     };
 
     inputChangedHandler(event, controlName){
@@ -47,7 +48,15 @@ class Auth extends Component {
 
     submitHnadler = (event) =>{
         event.preventDefault();
-        this.props.onAuth(this.state.controls.email, this.state.controls.password);
+        this.props.onAuth(this.state.controls.email.value, this.state.controls.password.value, this.state.isSignup);
+    }
+
+    switchAuthModeHandler = () => {
+        this.setState(prevState => {
+            return {
+                isSignup: !prevState.isSignup
+            };
+        });
     }
 
     render(){
@@ -70,12 +79,12 @@ class Auth extends Component {
         });
         
         return (
-            <div>
-                <form className={classes.Auth} onSubmit={this.submitHnadler}>
+            <div  className={classes.Auth}>
+                <form onSubmit={this.submitHnadler}>
                 {form}
                 <Button btnType="Success">Auth</Button>
                 </form>
-                <Button>switch to signin</Button>
+                <Button clicked={this.switchAuthModeHandler} btnType="Success">SWITCH TO {this.isSignup? "SIGNIN" : "SIGNUP"}</Button>
             </div>
         );
     }
@@ -83,7 +92,7 @@ class Auth extends Component {
 
 const mapDispathToProps = dispathc => {
     return {
-        onAuth: (email, password) => dispathc(actions.auth(email, password))
+        onAuth: (email, password, isSignup) => dispathc(actions.auth(email, password, isSignup))
     };
 }
 
