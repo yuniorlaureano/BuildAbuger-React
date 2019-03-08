@@ -4,6 +4,7 @@ import Input from '../../components/UI/Input/Input';
 import Button from '../../components/UI/Button/Button';
 import classes from './Auth.css';
 import * as actions from '../../store/actions/index';
+import axios from 'axios';
 
 class Auth extends Component {
     state = {
@@ -74,6 +75,7 @@ class Auth extends Component {
                 {form}
                 <Button btnType="Success">Auth</Button>
                 </form>
+                <Button>switch to signin</Button>
             </div>
         );
     }
