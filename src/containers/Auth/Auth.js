@@ -5,6 +5,7 @@ import Button from '../../components/UI/Button/Button';
 import classes from './Auth.css';
 import * as actions from '../../store/actions/index';
 import axios from 'axios';
+import Spinner from '../../components/UI/Spinner/Spinner';
 
 class Auth extends Component {
     state = {
@@ -52,6 +53,7 @@ class Auth extends Component {
     }
 
     switchAuthModeHandler = () => {
+        
         this.setState(prevState => {
             return {
                 isSignup: !prevState.isSignup
@@ -69,7 +71,7 @@ class Auth extends Component {
             });
         }
 
-        const form = formElementsArray.map(formElement => {
+        let form = formElementsArray.map(formElement => {
              return <Input 
                 key={formElement.id} inputtype = {formElement.config.elementType}
                 elementConfig = {formElement.config.elementConfig}
@@ -78,17 +80,37 @@ class Auth extends Component {
                 />
         });
         
+        if(this.props.loading)
+        {
+            form = <Spinner/>
+        }
+
+        let errorMessage = null;
+
+        if(this.props.error){
+            errorMessage = (
+                <p>{this.props.error.message}</p>
+            );
+        }
         return (
             <div  className={classes.Auth}>
+                {errorMessage}
                 <form onSubmit={this.submitHnadler}>
                 {form}
                 <Button btnType="Success">Auth</Button>
                 </form>
-                <Button clicked={this.switchAuthModeHandler} btnType="Success">SWITCH TO {this.isSignup? "SIGNIN" : "SIGNUP"}</Button>
+                <Button clicked={this.switchAuthModeHandler} btnType="Success">SWITCH TO {this.state.isSignup? "SIGNIN" : "SIGNUP"}</Button>
             </div>
         );
     }
 }
+
+const mapStateToProps = state => {
+    return {
+        loading: state.auth.loading,
+        error: state.auth.error
+    };
+};
 
 const mapDispathToProps = dispathc => {
     return {
@@ -96,4 +118,4 @@ const mapDispathToProps = dispathc => {
     };
 }
 
-export default connect(null, mapDispathToProps)(Auth);
+export default connect(mapStateToProps, mapDispathToProps)(Auth);
