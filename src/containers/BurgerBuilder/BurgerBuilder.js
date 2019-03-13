@@ -9,6 +9,7 @@ import Spinner from '../../components/UI/Spinner/Spinner';
 import withErrorHandler from '../../hoc/withErrorHandler';
 import {connect} from 'react-redux';
 import * as burgerBuilderActions from '../../store/actions/index';
+import { stat } from 'fs';
 
 class BulgerBuilder extends Component{
 
@@ -28,7 +29,12 @@ class BulgerBuilder extends Component{
     }
 
     purchaseHandler = () => {
-        this.setState({purchasing: true})
+        if(this.props.isAuthenticated){
+            this.setState({purchasing: true});
+        }else{
+            this.props.onSetRedirectPath('/checkout');
+            this.props.history.push('/auth');
+        }        
     }
 
     purchaseCancelHandler = () => {
@@ -76,7 +82,8 @@ class BulgerBuilder extends Component{
                         disabled={disabledInfo}
                         purchaseable={this.updatePurchase(this.props.ings)}
                         ordered={this.purchaseHandler}
-                        price={this.props.price}/>
+                        price={this.props.price}
+                        isAuth={this.props.isAuthenticated}/>
                 </div>
              );
         }
@@ -96,7 +103,8 @@ const mapStateToProps = state =>{
     return {
         ings: state.burgerBuilder.ingredients,
         price: state.burgerBuilder.totalPrice,
-        error: state.burgerBuilder.error
+        error: state.burgerBuilder.error,
+        isAuthenticated: state.auth.token !== null
     }
 };
 
@@ -105,7 +113,8 @@ const mapDispatchToProps = dispatch =>{
         onIngredientAdded: (ingName) => dispatch(burgerBuilderActions.addIngredient(ingName)),
         onIngredientRemoved: (ingName) => dispatch(burgerBuilderActions.removeIngredient(ingName)),
         onInitIngredients: () => dispatch(burgerBuilderActions.initIngredients()),
-        onInitPurchased: () => dispatch(burgerBuilderActions.purchaseInit())
+        onInitPurchased: () => dispatch(burgerBuilderActions.purchaseInit()),
+        onSetRedirectPath: (path) => dispatch(burgerBuilderActions.setAuthRedirectPath(path))
     }
 };
 
