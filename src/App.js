@@ -31,6 +31,7 @@ class App extends Component {
           <Route path="/checkout" exac component={Checkout}/>
           <Route path="/orders" exac component={Orders}/>
           <Route path="/logout" component={Logout}/>
+          <Route path="/auth" exac component={Auth}/>
           <Route path="/" component={BurgerBuilder}/>            
       </Switch>
       );
